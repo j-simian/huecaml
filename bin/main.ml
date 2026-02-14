@@ -120,6 +120,41 @@ let list_rooms client =
     print_endline [%string "  %{name} (%{children_count} children)"])
 ;;
 
+let list_grouped_lights client =
+  let%map grouped_lights = Huecaml.Grouped_light.get_all client in
+  print_endline "\n=== Grouped Lights ===";
+  List.iter grouped_lights ~f:(fun (grouped_light : Huecaml.Grouped_light.t) ->
+    let on_off = if grouped_light.on then "ON" else "OFF" in
+    let brightness =
+      match grouped_light.brightness with
+      | Some brightness ->
+        let brightness_percentage =
+          Float.to_string_hum ~decimals:0 (brightness *. 100.)
+        in
+        [%string " brightness=%{brightness_percentage}%%"]
+      | None -> ""
+    in
+    let color =
+      match grouped_light.color with
+      | Some color ->
+        let x = Float.to_string_hum ~decimals:4 color.x in
+        let y = Float.to_string_hum ~decimals:4 color.y in
+        [%string " color=(%{x}, %{y})"]
+      | None -> ""
+    in
+    let owner_rid = grouped_light.owner.rid in
+    print_endline [%string "  %{grouped_light.id} (owner: %{owner_rid}) [%{on_off}]%{brightness}%{color}"])
+;;
+
+let list_zones client =
+  let%map zones = Huecaml.Zone.get_all client in
+  print_endline "\n=== Zones ===";
+  List.iter zones ~f:(fun (zone : Huecaml.Zone.t) ->
+    let name = zone.metadata.name in
+    let children_count = Int.to_string (List.length zone.children) in
+    print_endline [%string "  %{name} (%{children_count} children)"])
+;;
+
 let list_scenes client =
   let%map scenes = Huecaml.Scene.get_all client in
   print_endline "\n=== Scenes ===";
@@ -149,6 +184,8 @@ let main () =
   let client = Huecaml.Client.create { bridge_ip; app_key } in
   let%bind () = list_lights client in
   let%bind () = list_rooms client in
+  let%bind () = list_zones client in
+  let%bind () = list_grouped_lights client in
   let%map () = list_scenes client in
   ()
 ;;

@@ -3,4 +3,6 @@ module Client = Client
 module Bridge = Bridge
 module Light = Light
 module Room = Room
+module Zone = Zone
+module Grouped_light = Grouped_light
 module Scene = Scene
