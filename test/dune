@@ -1,0 +1,5 @@
+(library
+ (name test_huecaml)
+ (libraries async core huecaml jsonaf)
+ (inline_tests)
+ (preprocess (pps ppx_jane ppx_jsonaf_conv)))
