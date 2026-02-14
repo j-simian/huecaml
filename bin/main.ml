@@ -2,11 +2,38 @@ open! Core
 open! Async
 open Deferred.Or_error.Let_syntax
 
+let config_dir =
+  let home = Sys_unix.home_directory () in
+  home ^/ ".config" ^/ "huecaml"
+;;
+
+let config_path = config_dir ^/ "config.json"
+
 let read_line () =
   let%map.Deferred result = Reader.read_line (Lazy.force Reader.stdin) in
   match result with
   | `Ok line -> Ok (Some line)
   | `Eof -> Ok None
+;;
+
+let load_config () =
+  match%map.Deferred Sys.file_exists config_path with
+  | `Yes ->
+    let contents = In_channel.read_all config_path in
+    let json = Jsonaf.of_string contents in
+    let bridge_ip = Jsonaf.member_exn "bridge_ip" json |> Jsonaf.string_exn in
+    let app_key = Jsonaf.member_exn "app_key" json |> Jsonaf.string_exn in
+    Ok (Some (bridge_ip, app_key))
+  | `No | `Unknown -> Ok None
+;;
+
+let save_config ~bridge_ip ~app_key =
+  let%map.Deferred () = Unix.mkdir ~p:() config_dir in
+  let json =
+    `Object [ "bridge_ip", `String bridge_ip; "app_key", `String app_key ]
+  in
+  Out_channel.write_all config_path ~data:(Jsonaf.to_string_hum json);
+  Ok ()
 ;;
 
 let discover_and_select_bridge () =
@@ -86,9 +113,22 @@ let list_scenes client =
     printf "  %s (group: %s/%s)\n" scene.metadata.name scene.group.rtype scene.group.rid)
 ;;
 
+let get_or_create_credentials () =
+  let%bind config = load_config () in
+  match config with
+  | Some (bridge_ip, app_key) ->
+    printf "Using saved credentials for bridge %s\n%!" bridge_ip;
+    return (bridge_ip, app_key)
+  | None ->
+    let%bind bridge_ip = discover_and_select_bridge () in
+    let%bind app_key = pair_with_bridge ~bridge_ip in
+    let%map () = save_config ~bridge_ip ~app_key in
+    printf "Credentials saved to %s\n%!" config_path;
+    bridge_ip, app_key
+;;
+
 let main () =
-  let%bind bridge_ip = discover_and_select_bridge () in
-  let%bind app_key = pair_with_bridge ~bridge_ip in
+  let%bind bridge_ip, app_key = get_or_create_credentials () in
   let client = Huecaml.Client.create { bridge_ip; app_key } in
   let%bind () = list_lights client in
   let%bind () = list_rooms client in

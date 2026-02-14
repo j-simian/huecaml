@@ -1,1 +1,1 @@
-src/client.pp.ml: Async Body Client Code Cohttp Cohttp_async Core Deferred Header Jsonaf Let_syntax Ppx_bench_lib Ppx_expect_runtime Ppx_inline_test_lib Ppx_module_timer_runtime Response Uri
+src/client.pp.ml: Async Body Client Code Cohttp Cohttp_async Conduit_async Core Deferred Header Jsonaf Let_syntax Ppx_bench_lib Ppx_expect_runtime Ppx_inline_test_lib Ppx_module_timer_runtime Response Uri

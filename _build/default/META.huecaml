@@ -1,12 +1,14 @@
 description = ""
 requires =
 "async
+ async_ssl
  base
  base_quickcheck
  base_quickcheck.ppx_quickcheck.runtime
  basement
  bin_prot
  cohttp-async
+ conduit-async
  core
  fieldslib
  jsonaf

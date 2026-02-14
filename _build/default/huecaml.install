@@ -51,3 +51,6 @@ lib: [
 libexec: [
   "_build/install/default/lib/huecaml/huecaml.cmxs"
 ]
+bin: [
+  "_build/install/default/bin/huecaml"
+]

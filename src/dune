@@ -1,5 +1,5 @@
 (library
  (name huecaml)
  (public_name huecaml)
- (libraries async core cohttp-async jsonaf uri)
+ (libraries async core cohttp-async conduit-async async_ssl jsonaf uri)
  (preprocess (pps ppx_jane ppx_jsonaf_conv)))

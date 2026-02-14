@@ -1,6 +1,6 @@
 (lang dune 3.20)
 (name huecaml)
-(sections (lib .) (libexec .))
+(sections (lib .) (libexec .) (bin ../../bin))
 (files
  (lib
   (META
@@ -51,7 +51,8 @@
    room.mli
    scene.ml
    scene.mli))
- (libexec (huecaml.cmxs)))
+ (libexec (huecaml.cmxs))
+ (bin (huecaml)))
 (library
  (name huecaml)
  (kind normal)
@@ -62,6 +63,8 @@
   async
   core
   cohttp-async
+  conduit-async
+  async_ssl
   jsonaf
   uri
   ppx_jsonaf_conv.runtime-lib

@@ -3,9 +3,13 @@ open! Async
 open Cohttp
 open Cohttp_async
 
+let ssl_config =
+  Conduit_async.V2.Ssl.Config.create ~verify_modes:[] ~verify:(fun _ -> return true) ()
+;;
+
 let discover () =
   let uri = Uri.of_string "https://discovery.meethue.com" in
-  let%bind resp, body = Client.get uri in
+  let%bind resp, body = Client.get ~ssl_config uri in
   let status = Response.status resp in
   let%bind body_str = Body.to_string body in
   if Code.is_success (Code.code_of_status status)
@@ -37,7 +41,7 @@ let authenticate ~bridge_ip ~device_type ~app_name =
   in
   let body = Cohttp_async.Body.of_string (Jsonaf.to_string body_json) in
   let headers = Header.of_list [ "Content-Type", "application/json" ] in
-  let%bind resp, resp_body = Client.post ~headers ~body uri in
+  let%bind resp, resp_body = Client.post ~ssl_config ~headers ~body uri in
   let status = Response.status resp in
   let%bind body_str = Body.to_string resp_body in
   if Code.is_success (Code.code_of_status status)
