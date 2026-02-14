@@ -67,7 +67,7 @@ let parse_light json =
     match Jsonaf.member "color_temperature" json with
     | Some ct ->
       (match Jsonaf.member "mirek" ct with
-       | Some (`Null) -> None
+       | Some `Null -> None
        | Some m -> Some (Jsonaf.int_exn m)
        | _ -> None)
     | None -> None
@@ -82,9 +82,7 @@ let get_all client =
     let lights = List.map data ~f:parse_light in
     Deferred.Or_error.return lights
   with
-  | exn ->
-    Deferred.Or_error.error_string
-      (sprintf "Failed to parse lights: %s" (Exn.to_string exn))
+  | exn -> Deferred.Or_error.error_s [%message "Failed to parse lights" (exn : exn)]
 ;;
 
 let get client id =
@@ -93,16 +91,14 @@ let get client id =
     let data = Jsonaf.list_exn (Jsonaf.member_exn "data" json) in
     match data with
     | [ light_json ] -> Deferred.Or_error.return (parse_light light_json)
-    | _ -> Deferred.Or_error.error_string "Expected exactly one light in response"
+    | _ -> Deferred.Or_error.error_s [%message "Expected exactly one light in response"]
   with
-  | exn ->
-    Deferred.Or_error.error_string
-      (sprintf "Failed to parse light: %s" (Exn.to_string exn))
+  | exn -> Deferred.Or_error.error_s [%message "Failed to parse light" (exn : exn)]
 ;;
 
 let set_on client id on =
-  let body = `Object [ "on", `Object [ "on", if on then `True else `False ] ] in
-  let%bind.Deferred.Or_error _json = Client.put client (sprintf "/light/%s" id) body in
+  let body = `Object [ "on", `Object [ ("on", if on then `True else `False) ] ] in
+  let%bind.Deferred.Or_error _json = Client.put client [%string "/light/%{id}"] body in
   Deferred.Or_error.return ()
 ;;
 
@@ -110,7 +106,7 @@ let set_brightness client id brightness =
   let body =
     `Object [ "dimming", `Object [ "brightness", `Number (Float.to_string brightness) ] ]
   in
-  let%bind.Deferred.Or_error _json = Client.put client (sprintf "/light/%s" id) body in
+  let%bind.Deferred.Or_error _json = Client.put client [%string "/light/%{id}"] body in
   Deferred.Or_error.return ()
 ;;
 
@@ -127,15 +123,14 @@ let set_color client id (color : Color.t) =
             ] )
       ]
   in
-  let%bind.Deferred.Or_error _json = Client.put client (sprintf "/light/%s" id) body in
+  let%bind.Deferred.Or_error _json = Client.put client [%string "/light/%{id}"] body in
   Deferred.Or_error.return ()
 ;;
 
 let set_color_temperature client id mirek =
   let body =
-    `Object
-      [ "color_temperature", `Object [ "mirek", `Number (Int.to_string mirek) ] ]
+    `Object [ "color_temperature", `Object [ "mirek", `Number (Int.to_string mirek) ] ]
   in
-  let%bind.Deferred.Or_error _json = Client.put client (sprintf "/light/%s" id) body in
+  let%bind.Deferred.Or_error _json = Client.put client [%string "/light/%{id}"] body in
   Deferred.Or_error.return ()
 ;;

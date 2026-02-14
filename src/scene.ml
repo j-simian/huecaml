@@ -41,26 +41,22 @@ let get_all client =
     let scenes = List.map data ~f:parse_scene in
     Deferred.Or_error.return scenes
   with
-  | exn ->
-    Deferred.Or_error.error_string
-      (sprintf "Failed to parse scenes: %s" (Exn.to_string exn))
+  | exn -> Deferred.Or_error.error_s [%message "Failed to parse scenes" (exn : exn)]
 ;;
 
 let get client id =
-  let%bind.Deferred.Or_error json = Client.get client (sprintf "/scene/%s" id) in
+  let%bind.Deferred.Or_error json = Client.get client [%string "/scene/%{id}"] in
   try
     let data = Jsonaf.list_exn (Jsonaf.member_exn "data" json) in
     match data with
     | [ scene_json ] -> Deferred.Or_error.return (parse_scene scene_json)
-    | _ -> Deferred.Or_error.error_string "Expected exactly one scene in response"
+    | _ -> Deferred.Or_error.error_s [%message "Expected exactly one scene in response"]
   with
-  | exn ->
-    Deferred.Or_error.error_string
-      (sprintf "Failed to parse scene: %s" (Exn.to_string exn))
+  | exn -> Deferred.Or_error.error_s [%message "Failed to parse scene: %s" (exn : exn)]
 ;;
 
 let recall client id =
   let body = `Object [ "recall", `Object [ "action", `String "active" ] ] in
-  let%bind.Deferred.Or_error _json = Client.put client (sprintf "/scene/%s" id) body in
+  let%bind.Deferred.Or_error _json = Client.put client [%string "/scene/%{id}"] body in
   Deferred.Or_error.return ()
 ;;

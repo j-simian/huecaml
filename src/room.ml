@@ -28,8 +28,7 @@ let parse_room json =
   in
   let children =
     match Jsonaf.member "children" json with
-    | Some children_json ->
-      List.map (Jsonaf.list_exn children_json) ~f:parse_resource_ref
+    | Some children_json -> List.map (Jsonaf.list_exn children_json) ~f:parse_resource_ref
     | None -> []
   in
   let grouped_light =
@@ -37,9 +36,7 @@ let parse_room json =
     | Some services ->
       List.find_map (Jsonaf.list_exn services) ~f:(fun svc ->
         let rtype = Jsonaf.string_exn (Jsonaf.member_exn "rtype" svc) in
-        if String.equal rtype "grouped_light"
-        then Some (parse_resource_ref svc)
-        else None)
+        if String.equal rtype "grouped_light" then Some (parse_resource_ref svc) else None)
     | None -> None
   in
   { id; metadata; children; grouped_light }
@@ -52,20 +49,16 @@ let get_all client =
     let rooms = List.map data ~f:parse_room in
     Deferred.Or_error.return rooms
   with
-  | exn ->
-    Deferred.Or_error.error_string
-      (sprintf "Failed to parse rooms: %s" (Exn.to_string exn))
+  | exn -> Deferred.Or_error.error_s [%message "Failed to parse rooms" (exn : exn)]
 ;;
 
 let get client id =
-  let%bind.Deferred.Or_error json = Client.get client (sprintf "/room/%s" id) in
+  let%bind.Deferred.Or_error json = Client.get client [%string "/room/%{id}"] in
   try
     let data = Jsonaf.list_exn (Jsonaf.member_exn "data" json) in
     match data with
     | [ room_json ] -> Deferred.Or_error.return (parse_room room_json)
-    | _ -> Deferred.Or_error.error_string "Expected exactly one room in response"
+    | _ -> Deferred.Or_error.error_s [%message "Expected exactly one room in response"]
   with
-  | exn ->
-    Deferred.Or_error.error_string
-      (sprintf "Failed to parse room: %s" (Exn.to_string exn))
+  | exn -> Deferred.Or_error.error_s [%message "Failed to parse room" (exn : exn)]
 ;;
