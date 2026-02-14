@@ -1,0 +1,5 @@
+(executable
+ (name main)
+ (public_name huecaml)
+ (libraries async core huecaml)
+ (preprocess (pps ppx_jane)))
