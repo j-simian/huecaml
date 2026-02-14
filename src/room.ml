@@ -36,7 +36,9 @@ let parse_room json =
     | Some services ->
       List.find_map (Jsonaf.list_exn services) ~f:(fun svc ->
         let rtype = Jsonaf.string_exn (Jsonaf.member_exn "rtype" svc) in
-        if String.equal rtype "grouped_light" then Some (parse_resource_ref svc) else None)
+        if String.equal rtype "grouped_light"
+        then Some (parse_resource_ref svc)
+        else None)
     | None -> None
   in
   { id; metadata; children; grouped_light }

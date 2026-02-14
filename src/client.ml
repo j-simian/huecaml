@@ -17,7 +17,8 @@ let ssl_config =
 ;;
 
 let base_uri t path =
-  Uri.make ~scheme:"https" ~host:t.config.bridge_ip ~path:("/clip/v2/resource" ^ path) ()
+  let bridge_ip = t.config.bridge_ip in
+  Uri.make ~scheme:"https" ~host:bridge_ip ~path:[%string "/clip/v2/resource%{path}"] ()
 ;;
 
 let headers t =
@@ -25,17 +26,23 @@ let headers t =
     [ "hue-application-key", t.config.app_key; "Content-Type", "application/json" ]
 ;;
 
-let parse_response (resp, body) =
-  let status = Cohttp.Response.status resp in
-  let%bind body_str = Cohttp_async.Body.to_string body in
-  if Cohttp.Code.is_success (Cohttp.Code.code_of_status status)
-  then (
-    match Jsonaf.parse body_str with
-    | Ok json -> Deferred.Or_error.return json
-    | Error err -> Deferred.return (Error err))
-  else
+let parse_response (response, response_body) =
+  let response_status = Cohttp.Response.status response in
+  let response_status_type =
+    if Cohttp.Code.is_success (Cohttp.Code.code_of_status response_status)
+    then `Success
+    else `Error
+  in
+  let%bind body_string = Cohttp_async.Body.to_string response_body in
+  match response_status_type with
+  | `Error ->
+    let http_error_code = Cohttp.Code.code_of_status response_status in
     Deferred.Or_error.error_s
-      [%message "HTTP" (Cohttp.Code.code_of_status status : int) body_str]
+      [%message "HTTP error" (http_error_code : int) (body_string : string)]
+  | `Success ->
+    (match Jsonaf.parse body_string with
+     | Ok json -> Deferred.Or_error.return json
+     | Error err -> Deferred.return (Error err))
 ;;
 
 let get t path =

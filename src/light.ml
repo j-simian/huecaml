@@ -86,7 +86,7 @@ let get_all client =
 ;;
 
 let get client id =
-  let%bind.Deferred.Or_error json = Client.get client (sprintf "/light/%s" id) in
+  let%bind.Deferred.Or_error json = Client.get client [%string "/light/%{id}"] in
   try
     let data = Jsonaf.list_exn (Jsonaf.member_exn "data" json) in
     match data with

@@ -52,7 +52,7 @@ let get client id =
     | [ scene_json ] -> Deferred.Or_error.return (parse_scene scene_json)
     | _ -> Deferred.Or_error.error_s [%message "Expected exactly one scene in response"]
   with
-  | exn -> Deferred.Or_error.error_s [%message "Failed to parse scene: %s" (exn : exn)]
+  | exn -> Deferred.Or_error.error_s [%message "Failed to parse scene" (exn : exn)]
 ;;
 
 let recall client id =
