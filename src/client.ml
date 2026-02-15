@@ -76,3 +76,30 @@ let delete t path =
   let%bind result = Cohttp_async.Client.delete ~ssl_config ~headers uri in
   parse_response result
 ;;
+
+let subscribe_sse t =
+  let bridge_ip = t.config.bridge_ip in
+  let uri =
+    Uri.make ~scheme:"https" ~host:bridge_ip ~path:"/eventstream/clip/v2" ()
+  in
+  let headers =
+    Cohttp.Header.of_list
+      [ "hue-application-key", t.config.app_key; "Accept", "text/event-stream" ]
+  in
+  let%bind response, response_body =
+    Cohttp_async.Client.get ~ssl_config ~headers uri
+  in
+  let response_status = Cohttp.Response.status response in
+  let response_status_type =
+    if Cohttp.Code.is_success (Cohttp.Code.code_of_status response_status)
+    then `Success
+    else `Error
+  in
+  match response_status_type with
+  | `Error ->
+    let%bind body_string = Cohttp_async.Body.to_string response_body in
+    let http_error_code = Cohttp.Code.code_of_status response_status in
+    Deferred.Or_error.error_s
+      [%message "Error subscribing to SSE" (http_error_code : int) (body_string : string)]
+  | `Success -> Deferred.Or_error.return response_body
+;;

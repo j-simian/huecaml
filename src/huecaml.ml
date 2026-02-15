@@ -6,3 +6,4 @@ module Room = Room
 module Zone = Zone
 module Grouped_light = Grouped_light
 module Scene = Scene
+module Event = Event

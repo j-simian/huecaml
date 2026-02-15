@@ -15,3 +15,4 @@ val get : t -> string -> Jsonaf.t Deferred.Or_error.t
 val put : t -> string -> Jsonaf.t -> Jsonaf.t Deferred.Or_error.t
 val post : t -> string -> Jsonaf.t -> Jsonaf.t Deferred.Or_error.t
 val delete : t -> string -> Jsonaf.t Deferred.Or_error.t
+val subscribe_sse : t -> Cohttp_async.Body.t Deferred.Or_error.t

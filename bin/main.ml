@@ -179,23 +179,49 @@ let get_or_create_credentials () =
     bridge_ip, app_key
 ;;
 
-let main () =
+let stream_events client =
+  let%bind event_pipe = Huecaml.Event.subscribe client in
+  print_endline "\n=== Streaming Events (Ctrl-C to stop) ===";
+  let%bind.Deferred () =
+    Pipe.iter_without_pushback event_pipe ~f:(fun (event : Huecaml.Event.t) ->
+      let event_type =
+        match event.event_type with
+        | Update -> "update"
+        | Add -> "add"
+        | Delete -> "delete"
+      in
+      List.iter event.data ~f:(fun (change : Huecaml.Event.resource_change) ->
+        let rtype = change.rtype in
+        let id = change.id in
+        let raw = Jsonaf.to_string_hum change.raw in
+        print_endline [%string "[%{event_type}] %{rtype} %{id}"];
+        print_endline raw;
+        print_endline ""))
+  in
+  return ()
+;;
+
+let main ~events =
   let%bind bridge_ip, app_key = get_or_create_credentials () in
   let client = Huecaml.Client.create { bridge_ip; app_key } in
   let%bind () = list_lights client in
   let%bind () = list_rooms client in
   let%bind () = list_zones client in
   let%bind () = list_grouped_lights client in
-  let%map () = list_scenes client in
-  ()
+  let%bind () = list_scenes client in
+  match events with
+  | false -> return ()
+  | true -> stream_events client
 ;;
 
 let command =
   Command.async_or_error
     ~summary:"Interactive Hue bridge CLI"
     [%map_open.Command
-      let () = return () in
-      fun () -> main ()]
+      let events =
+        flag "--events" no_arg ~doc:" Subscribe to the SSE event stream after listing resources"
+      in
+      fun () -> main ~events]
 ;;
 
 let () = Command_unix.run command
